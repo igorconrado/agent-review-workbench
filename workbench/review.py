@@ -105,10 +105,16 @@ def replace_evidence(principal_id: str, case_id: str, evidence: Evidence) -> Non
         audit(conn, case_id, principal_id, "context_replaced")
 
 
-def cancel(principal_id: str, case_id: str) -> None:
+def cancel(principal_id: str, case_id: str) -> dict[str, Any]:
     with connection() as conn:
-        case = locked_case(conn, principal_id, case_id)
-        if case["status"] in {"executed", "uncertain"}:
-            raise Conflict("Existing effects must be reconciled; cancellation cannot erase them")
+        locked_case(conn, principal_id, case_id)
+        calls = conn.execute(
+            "SELECT state,result FROM tool_calls WHERE case_id=%s", (UUID(case_id),)
+        ).fetchall()
         conn.execute("UPDATE cases SET status='cancelled' WHERE id=%s", (UUID(case_id),))
         audit(conn, case_id, principal_id, "cancelled")
+        return {
+            "status": "cancelled",
+            "effects": [row["result"] for row in calls if row["state"] == "settled"],
+            "reconciliation_required": any(row["state"] == "unknown" for row in calls),
+        }
