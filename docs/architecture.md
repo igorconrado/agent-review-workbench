@@ -21,7 +21,7 @@ flowchart LR
   G --> D[Domain decisions and journal]
   G --> C[(PostgreSQL checkpoints)]
   MCP[Restricted stdio MCP] --> D
-  Worker[Optional single worker] --> G
+  Worker[Bounded single worker] --> D
   D --> P[(PostgreSQL domain)]
   D --> S[Independent sandbox transaction]
   S --> E[(Sandbox effects)]
@@ -111,6 +111,8 @@ real-model reasoning quality or broad prompt-injection resistance.
 - No real LLM provider execution or subjective human evaluation yet.
 - Invocation budgets reset at resume; durable lifetime quotas are still needed
   before enabling autonomous provider usage. Elapsed-time checks are cooperative.
+  The worker has a separate durable five-attempt allowance and authorized replay;
+  this does not constitute a model spending quota.
 - MCP uses a trusted local launcher identity, not remotely exposed OAuth.
 - No public deployment, HA, offsite backup or hosted telemetry.
 - The browser shows at most the latest 50 cases; cursor pagination is pending.

@@ -1,0 +1,49 @@
+{
+  "verified": true,
+  "tables": {
+    "public.audit": {
+      "count": 33,
+      "sha256": "657b7664c1364eeafdb5b234f2443ee3f633149f8389b00c71450fbed0da895c"
+    },
+    "public.cases": {
+      "count": 8,
+      "sha256": "05ba79c8a1160be2ef15694452250ed9b141191db2cd6155dc8284d9c3750c18"
+    },
+    "public.checkpoint_blobs": {
+      "count": 40,
+      "sha256": "b6b8df86b60919fe14a150bbec9502f5694df1a7f2aa77a344675aef6424fea5"
+    },
+    "public.checkpoint_migrations": {
+      "count": 10,
+      "sha256": "7112f5afb86c745a846eec14e3e3f88b37b3e838462fca2739a8ff651fabaa5b"
+    },
+    "public.checkpoint_writes": {
+      "count": 109,
+      "sha256": "1dae71e8042301e40d9b8af053a9a87f28d14f9d7c98cb1df6f025ff63cb27e0"
+    },
+    "public.checkpoints": {
+      "count": 64,
+      "sha256": "a0ebf9f90c4717578b5881df4b5196df372460792dd2ae648c1084ef167b9cd4"
+    },
+    "public.login_budgets": {
+      "count": 3,
+      "sha256": "ac2770dde01b408c56c68e9e32d88d5d64aece2c3e0ec4b3076b35c67df050d2"
+    },
+    "public.principals": {
+      "count": 4,
+      "sha256": "d54b82a134ffe1bfd374222bd47ef1ea0622c4883bd9c37944c3eab71500a7a2"
+    },
+    "public.sessions": {
+      "count": 8,
+      "sha256": "f05c9bc474f7685a4652e76b116e33ea152eebd4bfad4e6c4662d8a627504244"
+    },
+    "public.tool_calls": {
+      "count": 6,
+      "sha256": "4400e9709a8a3cf7e31e909f9e153596869c34aeadd4ab3865cdef21d39ac6a4"
+    },
+    "sandbox.effects": {
+      "count": 4,
+      "sha256": "c84e7d52aa7306635fd3870ad6e5f260a466f12878c81ca5248fae21122fa244"
+    }
+  }
+}
