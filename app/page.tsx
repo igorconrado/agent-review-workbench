@@ -16,6 +16,7 @@ type Case = {
   action: { kind: string; reason: string } | null;
   action_hash: string | null;
   reconciliation_required: boolean;
+  worker_attempts: number;
 };
 type Workspace = { principal_id: string; role: string; cases: Case[] };
 const labels: Record<string, string> = {
@@ -287,6 +288,24 @@ export default function Page() {
                     </section>
                   )}
                   <div className="actions">
+                    {["approved", "uncertain"].includes(active.status) &&
+                      active.worker_attempts >= 5 && (
+                        <>
+                          <p>
+                            O processamento automático pausou após cinco
+                            tentativas. Verifique a causa antes de solicitar
+                            nova tentativa.
+                          </p>
+                          <button
+                            disabled={busy || !reviewer}
+                            onClick={() =>
+                              void perform(() => transition("retry"))
+                            }
+                          >
+                            Retomar processamento automático
+                          </button>
+                        </>
+                      )}
                     {active.status === "cancelled" &&
                       active.reconciliation_required && (
                         <button
