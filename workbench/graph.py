@@ -19,7 +19,9 @@ def run_graph(principal_id: str, case_id: str, resume: bool = False) -> dict[str
     # Authorize before reading any checkpoint; identity is a trusted server argument,
     # never an editable graph state field or model-supplied tool parameter.
     with connection() as conn:
-        locked_case(conn, principal_id, case_id)
+        current = locked_case(conn, principal_id, case_id)
+        if resume and current["status"] not in {"approved", "uncertain", "executed"}:
+            raise Conflict("No approved workflow is available to resume")
 
     def proposal(state: ReviewState) -> dict[str, Any]:
         return {"proposal": propose_case(principal_id, state["case_id"])}

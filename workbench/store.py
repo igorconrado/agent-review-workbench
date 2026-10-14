@@ -22,7 +22,8 @@ def connection() -> Iterator[psycopg.Connection[dict[str, Any]]]:
 
 def migrate() -> None:
     with connection() as conn:
-        conn.execute(Path("migrations/001_review.sql").read_text())
+        for migration in sorted(Path("migrations").glob("*.sql")):
+            conn.execute(migration.read_text())
 
 
 if __name__ == "__main__":

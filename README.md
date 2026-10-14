@@ -12,8 +12,13 @@ execution journal reconciles sandbox effects by stable action hash after process
 death. The sandbox commits in an independent transaction/schema on the same
 PostgreSQL server: it models provider semantics, not network or host isolation.
 
-Not yet implemented: usable browser flow, authenticated API sessions, external
-HTTP sandbox transport, 60-case evaluation dataset, model comparison, backup and deployment.
+Implemented browser flow: login, create synthetic case, inspect evidence, propose,
+approve/reject, execute and verify, cancel, and abstain when evidence is insufficient.
+FastAPI sessions use opaque hashed tokens and current database identity, same-origin
+writes and HttpOnly/SameSite cookies. Set COOKIE_SECURE=true behind HTTPS.
+
+Not yet implemented: proposal editing UI, external HTTP sandbox transport,
+60-case evaluation dataset, model comparison, backup and deployment.
 Installed dependencies do not constitute evidence of those capabilities.
 
 ## Run checks
@@ -38,7 +43,23 @@ python -m pip_audit --disable-pip --no-deps -r requirements-lock.txt
 Integration fixtures erase only a database whose URL ends with `workbench_test`.
 Do not point them at persistent user data. Without DATABASE_URL, PostgreSQL tests
 skip explicitly. The domain review-to-effect flow is tested; a usable authenticated
-browser/API flow is still pending.
+browser/API flow also has integration and Chromium desktop/mobile tests.
+
+## Run the interface
+
+After migration (`python -m workbench.store`), seed the synthetic identities with
+`python -m workbench.identity`. This development command resets fixture passwords
+and roles; never use it against a real deployment. Run the API using
+`python -m uvicorn workbench.api:app --host 127.0.0.1 --port 8100`, then `npm run build`
+and `npx next start --hostname 127.0.0.1 --port 3200` in another terminal.
+Open http://127.0.0.1:3200. Login as `ana`, `viewer`, or `cedro` with the synthetic
+password `Synthetic-Test-Password`. `ana` and `cedro` belong to different tenants.
+`npx playwright test` runs the browser checks against a running API and starts Next.
+
+The API currently runs bounded graph calls in its worker threadpool. A separately
+scheduled worker, pagination beyond the latest 50 cases and distributed abuse
+protection remain planned. Login has a durable per-identity budget, not an IP/global
+limit. No public service is exposed.
 
 ## Verified failure boundary
 
