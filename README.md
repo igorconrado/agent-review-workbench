@@ -13,8 +13,7 @@ death. The sandbox commits in an independent transaction/schema on the same
 PostgreSQL server: it models provider semantics, not network or host isolation.
 
 Not yet implemented: usable browser flow, authenticated API sessions, external
-HTTP sandbox transport, LangGraph runtime/checkpoints, MCP transport,
-60-case evaluation dataset, model comparison, backup and deployment.
+HTTP sandbox transport, 60-case evaluation dataset, model comparison, backup and deployment.
 Installed dependencies do not constitute evidence of those capabilities.
 
 ## Run checks
@@ -54,3 +53,22 @@ Local validation on 2026-10-14: 24 tests passed, including real PostgreSQL and t
 process-death scenario. The initial decision slice also passed clean Linux CI:
 [run 38646754031](https://github.com/igorconrado/agent-review-workbench/actions/runs/38646754031).
 This bounded test gate is not a universal claim of agent safety.
+
+## Checkpoints and restricted tools
+
+`workbench/graph.py` runs three bounded LangGraph nodes: proposal, interrupt for
+human review, and execution. PostgreSQL checkpoints survive interpreter restart.
+The resume payload cannot approve anything: the graph rechecks the domain record.
+The recursion limit is eight; provider token/cost/time budgets remain pending.
+
+`python -m workbench.mcp_server` exposes exactly five tools over stdio. Set
+`MCP_PRINCIPAL_ID` in the trusted launcher. There is no identity/organization tool
+argument and no approval tool. A model cannot turn a proposal into an approval.
+This local transport assumes a trusted operator controls the environment; it is
+not a remote multi-user OAuth service. MCP order/payment evidence is synthetic.
+
+Tests exercise a real MCP client/subprocess, denied tools, invalid arguments,
+cross-tenant requests and missing approvals. LangGraph tests restart the process
+at human review, deny an unapproved resume, then resume after a domain decision.
+The graph currently invokes domain functions directly; MCP transport is verified
+independently and is not falsely presented as the graph's tool transport.
