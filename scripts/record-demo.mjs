@@ -1,7 +1,6 @@
 import { chromium } from "@playwright/test";
 import { mkdir, copyFile } from "node:fs/promises";
 await mkdir(".tmp/video", { recursive: true });
-await mkdir("docs/demo", { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({
   viewport: { width: 1280, height: 900 },
@@ -22,7 +21,7 @@ await page.reload();
 await page.getByRole("heading", { name: "Efeito verificado" }).waitFor();
 const video = page.video();
 await context.close();
-await copyFile(await video.path(), "docs/demo/review-flow.webm");
+await copyFile(await video.path(), ".tmp/video/review-flow.webm");
 const mobile = await browser.newContext({
   viewport: { width: 390, height: 844 },
 });

@@ -1,10 +1,17 @@
 name: verify
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:18.4
@@ -47,6 +54,18 @@ jobs:
           python -m uvicorn workbench.api:app --host 127.0.0.1 --port 8100 > /tmp/workbench-api.log 2>&1 &
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8100/api/health && break; sleep 1; done
           npx playwright test
+      - name: Record the verified review flow
+        run: |
+          mkdir -p .tmp/video
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3200 > .tmp/video/web.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3200/api/health; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3200/api/health
+          node scripts/record-demo.mjs
       - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --redact
       - name: Backup and restore isolated database
         env:
@@ -73,4 +92,7 @@ jobs:
           name: verification-${{ github.sha }}
           path: |
             .tmp/reports
+            .tmp/video/review-flow.webm
+            .tmp/*-review.png
             test-results
+          include-hidden-files: true
