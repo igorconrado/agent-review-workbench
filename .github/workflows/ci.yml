@@ -1,0 +1,33 @@
+name: verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: workbench
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: workbench_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U workbench -d workbench_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://workbench:synthetic-ci-only@localhost:5432/workbench_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install -r requirements-lock.txt
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m mypy
+      - run: python -m pytest -q
+      - run: python -m pip_audit --disable-pip --no-deps -r requirements-lock.txt
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 dir /repo --redact
