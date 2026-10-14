@@ -12,8 +12,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from workbench.graph import run_graph
 from workbench.identity import identify, login
-from workbench.policy import Evidence
-from workbench.review import Conflict, Forbidden, cancel, create_case, decide, replace_evidence
+from workbench.policy import Action, Evidence
+from workbench.review import (
+    Conflict,
+    Forbidden,
+    cancel,
+    create_case,
+    decide,
+    edit_proposal,
+    replace_evidence,
+)
 from workbench.store import connection
 
 app = FastAPI(title="Agent Review Workbench", version="0.1.0")
@@ -64,6 +72,12 @@ class Decision(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     action_hash: str = Field(pattern="^[a-f0-9]{64}$")
     approve: bool
+
+
+class ProposalEdit(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    action_hash: str = Field(pattern="^[a-f0-9]{64}$")
+    action: Action
 
 
 def actor(request: Request) -> str:
@@ -135,6 +149,11 @@ def decision(request: Request, case_id: str, body: Decision) -> dict[str, bool]:
 @app.post("/api/cases/{case_id}/execute")
 def execute(request: Request, case_id: str) -> dict[str, Any]:
     return dict(run_graph(actor(request), case_id, resume=True)["result"])
+
+
+@app.post("/api/cases/{case_id}/edit")
+def edit(request: Request, case_id: str, body: ProposalEdit) -> dict[str, str]:
+    return {"action_hash": edit_proposal(actor(request), case_id, body.action_hash, body.action)}
 
 
 @app.post("/api/cases/{case_id}/cancel")

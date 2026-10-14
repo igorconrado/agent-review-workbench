@@ -3,13 +3,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from workbench.policy import Evidence
+from workbench.policy import Action, Evidence
 from workbench.review import (
     Conflict,
     Forbidden,
     cancel,
     create_case,
     decide,
+    edit_proposal,
     propose_case,
     replace_evidence,
 )
@@ -90,3 +91,17 @@ def test_cancel_blocks_subsequent_proposal_and_approval():
         propose_case("ana", case_id)
     with pytest.raises(Conflict):
         decide("ana", case_id, proposal["action_hash"], True)
+
+
+def test_edit_requires_new_exact_approval_hash():
+    case_id = new_case()
+    proposal = propose_case("ana", case_id)
+    digest = edit_proposal(
+        "ana",
+        case_id,
+        proposal["action_hash"],
+        Action(kind="close_no_action", reason="Human corrected the proposal"),
+    )
+    with pytest.raises(Conflict):
+        decide("ana", case_id, proposal["action_hash"], True)
+    decide("ana", case_id, digest, True)
