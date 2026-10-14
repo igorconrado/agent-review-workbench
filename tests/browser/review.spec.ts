@@ -9,11 +9,11 @@ test("Portuguese errors are focused and expired sessions return to login", async
     .getByLabel("Senha", { exact: true })
     .fill("incorrect-synthetic-password");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("alert")).toHaveText(
+  await expect(page.locator(".feedback").getByRole("alert")).toHaveText(
     "Confira seu usuário e sua senha.",
   );
   await expect(page.locator(".feedback")).toBeFocused();
-  await expect(page.getByRole("alert")).toBeInViewport();
+  await expect(page.locator(".feedback").getByRole("alert")).toBeInViewport();
   await page
     .getByLabel("Senha", { exact: true })
     .fill("Synthetic-Test-Password");
@@ -27,7 +27,7 @@ test("Portuguese errors are focused and expired sessions return to login", async
   await page
     .getByRole("button", { name: "Atualizar dados", exact: true })
     .click();
-  await expect(page.getByRole("alert")).toHaveText(
+  await expect(page.locator(".feedback").getByRole("alert")).toHaveText(
     "Sua sessão expirou ou foi revogada. Entre novamente.",
   );
   await expect(
