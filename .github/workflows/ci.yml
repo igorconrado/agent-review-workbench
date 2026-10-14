@@ -20,6 +20,8 @@ jobs:
       DATABASE_URL: postgresql://workbench:synthetic-ci-only@localhost:5432/workbench_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -46,3 +48,29 @@ jobs:
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8100/api/health && break; sleep 1; done
           npx playwright test
       - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --redact
+      - name: Backup and restore isolated database
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+          RESTORE_DATABASE_URL: postgresql://workbench:synthetic-ci-only@localhost:5432/workbench_restore_test
+        run: |
+          mkdir -p .tmp/reports
+          docker exec "$PG_CONTAINER" pg_dump -U workbench -Fc workbench_test > .tmp/backup.dump
+          docker exec "$PG_CONTAINER" createdb -U workbench workbench_restore_test
+          docker exec -i "$PG_CONTAINER" pg_restore -U workbench -d workbench_restore_test < .tmp/backup.dump
+          python scripts/verify_restore.py > .tmp/reports/restore.json
+      - name: Build and smoke commit-tagged containers
+        run: |
+          docker build --target api -t workbench-api:${{ github.sha }} .
+          docker build --target web --build-arg API_ORIGIN=http://127.0.0.1:8101 -t workbench-web:${{ github.sha }} .
+          docker run -d --name workbench-api-smoke --network host -e DATABASE_URL="$DATABASE_URL" workbench-api:${{ github.sha }} python -m uvicorn workbench.api:app --host 127.0.0.1 --port 8101
+          docker run -d --name workbench-web-smoke --network host -e PORT=3201 -e HOSTNAME=127.0.0.1 workbench-web:${{ github.sha }}
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:3201/api/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:3201/api/health
+          curl -fsS http://127.0.0.1:3201/ > /dev/null
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-${{ github.sha }}
+          path: |
+            .tmp/reports
+            test-results

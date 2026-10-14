@@ -1,0 +1,10 @@
+.git
+.venv
+.tmp
+.next
+node_modules
+test-results
+playwright-report
+.env
+docs/demo
+*.tsbuildinfo
