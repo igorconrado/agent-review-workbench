@@ -1,0 +1,205 @@
+{
+  "status": "pending-human-review",
+  "dataset_sha256": "68baef1519ded875ba60d5fc684a659678c3f92613e7e1b9511c3d38714769b3",
+  "model_run_reference": null,
+  "rows": [
+    {
+      "case_id": "v1-success-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-success-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-success-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-insufficient-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-insufficient-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-insufficient-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-contradictory-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-contradictory-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-contradictory-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-injection-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-injection-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-injection-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-duplicate-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-duplicate-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-duplicate-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-outage-08",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-outage-09",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    },
+    {
+      "case_id": "v1-outage-10",
+      "reviewer": null,
+      "reviewed_at": null,
+      "model_output_reference": null,
+      "reviewed_action": null,
+      "decision": null,
+      "grounding_score": null,
+      "usefulness_score": null,
+      "rationale": null
+    }
+  ]
+}

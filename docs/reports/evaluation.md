@@ -14,6 +14,14 @@ an independent estimate of real-world model quality.
 
 ## Rubric
 
+Native goal rerun: [raw report](evaluation-native-goal-2026-10-14.json), clean
+commit `488e82a22767d8dce2f47b57f170c18a3ba51aaf`, dataset SHA-256
+`68baef1519ded875ba60d5fc684a659678c3f92613e7e1b9511c3d38714769b3`.
+All 42 development and 18 final action/effect gates passed after the authorization,
+cancellation and worker fixes. This does not change the non-blinded/scripted
+methodology or establish any live-model result. See the
+[three-arm protocol](model-comparison-plan.md) for the remaining experiment.
+
 - Correctness: exact match of the structured action against the explicit label.
 - Abstention: incomplete or contradictory evidence must produce abstain.
 - Effect gate: unapproved execution is denied; approved actions create one effect;

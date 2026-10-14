@@ -6,7 +6,7 @@ It is an independent portfolio project, not a reconstruction of an employer's sy
 ## Two-minute review
 
 Watch the [recorded browser flow](docs/demo/review-flow.webm), inspect the
-[60-case raw evaluation](docs/reports/evaluation-2026-10-14.json), then read the
+[60-case raw evaluation](docs/reports/evaluation-native-goal-2026-10-14.json), then read the
 [architecture and failure sequence](docs/architecture.md). The main proof is a
 process dying after a sandbox effect and recovering without duplicating it.
 The [portfolio-wide evidence matrix](https://github.com/igorconrado/commerce-operations/blob/main/docs/evidence.md)
@@ -31,6 +31,21 @@ per-invocation budgets, Docker/Compose, recovery worker and backup/restore check
 Not yet verified: real model comparison, subjective human review or deployment.
 External HTTP sandbox transport and durable lifetime budgets remain planned.
 Installed dependencies do not constitute evidence of those capabilities.
+
+Native goal hardening (2026-10-14): new effects revalidate the original approver
+even when another reviewer executes. Cancelled unknown attempts now have an
+authorized reconciliation-only API/UI path, including verified absence without a
+new effect. Worker retries have a durable five-attempt allowance, progressive
+delay and audited replay; a failing batch cannot starve later due work. Domain
+approvals recover without requiring a graph checkpoint. See [operations](docs/runbooks/operations.md).
+
+The updated local suite passed **60 Python tests** against real PostgreSQL,
+including edited/context-replaced and concurrent graph resumes. The fresh
+deterministic evaluation at clean commit `488e82a` passed 42/42 development and
+18/18 final action/effect gates. These remain scripted-review results. The
+[three-arm comparison protocol](docs/reports/model-comparison-plan.md) and
+[blank human scoring template](docs/reports/human-review-template.json) prepare
+the remaining authorized-model and real-reviewer work; no live result is invented.
 
 ## Run checks
 
@@ -81,7 +96,7 @@ One provider effect remains. Unavailable lookup leaves the journal unknown and
 does not trigger a blind retry. Cancellation blocks new effects, reports known
 effects, and preserves unresolved uncertainty. Authorization is reloaded at execution.
 
-Local validation on 2026-10-14: 39 Python tests and four browser tests passed, including real PostgreSQL and the
+Initial validation on 2026-10-14: 39 Python tests and four browser tests passed, including real PostgreSQL and the
 process-death scenario. The initial decision slice also passed clean Linux CI:
 [run 38646754031](https://github.com/igorconrado/agent-review-workbench/actions/runs/38646754031).
 This bounded test gate is not a universal claim of agent safety.
