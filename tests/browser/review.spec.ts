@@ -1,5 +1,41 @@
 import { test, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
+
+test("Portuguese errors are focused and expired sessions return to login", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByLabel("Senha", { exact: true })
+    .fill("incorrect-synthetic-password");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Confira seu usuário e sua senha.",
+  );
+  await expect(page.locator(".feedback")).toBeFocused();
+  await expect(page.getByRole("alert")).toBeInViewport();
+  await page
+    .getByLabel("Senha", { exact: true })
+    .fill("Synthetic-Test-Password");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Atualizar dados", exact: true }),
+  ).toBeVisible();
+  await page.request.delete("/api/session", {
+    headers: { origin: "http://127.0.0.1:3200" },
+  });
+  await page
+    .getByRole("button", { name: "Atualizar dados", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Sua sessão expirou ou foi revogada. Entre novamente.",
+  );
+  await expect(
+    page.getByRole("button", { name: "Entrar", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveValue("");
+  await expect(page.locator(".feedback")).toBeFocused();
+});
 test("review and execute a synthetic effect with persisted result", async ({
   page,
 }) => {

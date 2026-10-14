@@ -54,6 +54,7 @@ p {
 }
 nav {
   padding: 22px 0;
+  flex-wrap: wrap;
 }
 button,
 input,
@@ -207,6 +208,10 @@ code {
   color: #8d2525;
   background: #ffeded;
   padding: 14px;
+}
+.feedback:focus {
+  outline: 3px solid #d27619;
+  outline-offset: 3px;
 }
 .success {
   color: #185b35;
