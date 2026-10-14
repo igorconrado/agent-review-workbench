@@ -129,6 +129,10 @@ def cancel(principal_id: str, case_id: str) -> dict[str, Any]:
         audit(conn, case_id, principal_id, "cancelled")
         return {
             "status": "cancelled",
-            "effects": [row["result"] for row in calls if row["state"] == "settled"],
+            "effects": [
+                row["result"]
+                for row in calls
+                if row["state"] == "settled" and row["result"].get("outcome") != "not_applied"
+            ],
             "reconciliation_required": any(row["state"] == "unknown" for row in calls),
         }

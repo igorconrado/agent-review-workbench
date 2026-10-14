@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from workbench.execution import SyntheticSandbox, execute_approved
 from workbench.graph import run_graph
 from workbench.identity import identify, login
 from workbench.policy import Action, Evidence
@@ -123,7 +124,9 @@ def list_cases(request: Request) -> dict[str, Any]:
         principal = conn.execute("SELECT * FROM principals WHERE id=%s", (principal_id,)).fetchone()
         assert principal
         cases = conn.execute(
-            "SELECT * FROM cases WHERE organization=%s ORDER BY created_at DESC LIMIT 50",
+            "SELECT cases.*, EXISTS(SELECT 1 FROM tool_calls WHERE case_id=cases.id "
+            "AND state='unknown') AS reconciliation_required FROM cases "
+            "WHERE organization=%s ORDER BY created_at DESC LIMIT 50",
             (principal["organization"],),
         ).fetchall()
         return {"principal_id": principal_id, "role": principal["role"], "cases": cases}
@@ -154,6 +157,11 @@ def execute(request: Request, case_id: str) -> dict[str, Any]:
 @app.post("/api/cases/{case_id}/edit")
 def edit(request: Request, case_id: str, body: ProposalEdit) -> dict[str, str]:
     return {"action_hash": edit_proposal(actor(request), case_id, body.action_hash, body.action)}
+
+
+@app.post("/api/cases/{case_id}/reconcile")
+def reconcile(request: Request, case_id: str) -> dict[str, Any]:
+    return execute_approved(actor(request), case_id, SyntheticSandbox(), cancelled_only=True)
 
 
 @app.post("/api/cases/{case_id}/cancel")

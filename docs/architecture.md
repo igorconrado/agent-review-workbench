@@ -88,6 +88,16 @@ Decision: store unknown intent first, use stable provider idempotency and reconc
 before retry. Consequence: uncertainty is an explicit state and the provider must
 offer authoritative lookup. If lookup is unavailable, no blind retry occurs.
 
+Cancelled attempts retain their journal until an authorized reviewer verifies the
+previous result. The browser exposes a reconciliation-only action backed by
+`POST /api/cases/{id}/reconcile`; it rejects non-cancelled cases and never starts
+a new effect. An existing effect is reported, authoritative absence settles as
+`not_applied`, and an unavailable lookup preserves uncertainty. Case status stays
+cancelled in every outcome. The synthetic synchronous sandbox guarantees that an
+authoritative absence cannot later become an in-flight effect; a real asynchronous
+provider would need a terminal operation-status/cancellation contract before
+making that same claim.
+
 ## ADR: deterministic policy before model integration
 
 Alternative: let a model choose tools and approve its own output. Rejected because
