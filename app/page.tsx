@@ -15,6 +15,7 @@ type Case = {
   evidence: Evidence;
   action: { kind: string; reason: string } | null;
   action_hash: string | null;
+  reconciliation_required: boolean;
 };
 type Workspace = { principal_id: string; role: string; cases: Case[] };
 const labels: Record<string, string> = {
@@ -98,7 +99,9 @@ export default function Page() {
     setMessage(
       suffix === "execute"
         ? "Resultado do sandbox verificado."
-        : "Decisão registrada.",
+        : suffix === "reconcile"
+          ? "Resultado anterior verificado. Nenhuma nova ação foi iniciada."
+          : "Decisão registrada.",
     );
   }
 
@@ -284,6 +287,17 @@ export default function Page() {
                     </section>
                   )}
                   <div className="actions">
+                    {active.status === "cancelled" &&
+                      active.reconciliation_required && (
+                        <button
+                          disabled={busy || !reviewer}
+                          onClick={() =>
+                            void perform(() => transition("reconcile"))
+                          }
+                        >
+                          Verificar resultado anterior
+                        </button>
+                      )}
                     {active.status === "open" && (
                       <button
                         disabled={busy || !reviewer}
@@ -399,6 +413,13 @@ export default function Page() {
                       </button>
                     )}
                   </div>
+                  {active.status === "cancelled" && (
+                    <p>
+                      {active.reconciliation_required
+                        ? "Novas ações bloqueadas. O resultado da tentativa anterior ainda precisa ser verificado."
+                        : "Novas ações bloqueadas. Não há resultados pendentes de verificação."}
+                    </p>
+                  )}
                   {active.status === "executed" && (
                     <p className="success">
                       Efeito idempotente registrado e verificado. Nenhum

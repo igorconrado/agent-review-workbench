@@ -47,9 +47,13 @@ def execute_approved(
     case_id: str,
     gateway: Gateway,
     after_effect: Callable[[], None] | None = None,
+    *,
+    cancelled_only: bool = False,
 ) -> dict[str, Any]:
     with connection() as conn:
         case = locked_case(conn, principal_id, case_id)
+        if cancelled_only and case["status"] != "cancelled":
+            raise Conflict("Only cancelled work can use reconciliation without execution")
         if case["status"] not in {"approved", "uncertain", "executed", "cancelled"}:
             raise Conflict("No executable approval")
         action = Action.model_validate(case["action"])
@@ -80,12 +84,15 @@ def execute_approved(
             return dict(call["result"])
         result = gateway.lookup(key)
         if result is None:
-            if case["status"] != "uncertain" or case["action_hash"] != key:
+            if case["status"] == "cancelled":
+                result = {"outcome": "not_applied", "effect_id": None, "sandbox_only": True}
+            elif case["status"] != "uncertain" or case["action_hash"] != key:
                 raise Conflict("Cancelled or superseded action cannot start a new effect")
-            # Existing effects remain reconcilable, but a new effect requires a
-            # still-authorized approver even when a different reviewer executes.
-            authorize(conn, case["decision_by"], case["organization"])
-            result = gateway.execute(key, action)
+            else:
+                # Existing effects remain reconcilable, but a new effect requires a
+                # still-authorized approver even when a different reviewer executes.
+                authorize(conn, case["decision_by"], case["organization"])
+                result = gateway.execute(key, action)
         if after_effect:
             after_effect()
         conn.execute(
@@ -94,5 +101,10 @@ def execute_approved(
         )
         if case["status"] != "cancelled":
             conn.execute("UPDATE cases SET status='executed' WHERE id=%s", (UUID(case_id),))
-        audit(conn, case_id, principal_id, "effect_verified")
+        audit(
+            conn,
+            case_id,
+            principal_id,
+            "absence_verified" if result.get("outcome") == "not_applied" else "effect_verified",
+        )
         return result

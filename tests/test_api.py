@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from tests.test_review import database  # noqa: F401
 from workbench.api import app
+from workbench.execution import SyntheticSandbox, execute_approved
 from workbench.identity import seed
 from workbench.store import connection
 
@@ -88,3 +89,41 @@ def test_session_revocation_takes_effect_immediately():
         with connection() as conn:
             conn.execute("UPDATE principals SET active=false WHERE id='ana'")
         assert client.get("/api/cases").status_code == 403
+
+
+def test_cancelled_unknown_result_can_be_verified_through_api():
+    class Unavailable(SyntheticSandbox):
+        def lookup(self, key):
+            raise TimeoutError("Unavailable")
+
+    with signed_in() as client:
+        case_id = client.post(
+            "/api/cases",
+            json={
+                "order_status": "expired",
+                "payment_status": "paid",
+                "amount_cents": 100,
+            },
+        ).json()["case_id"]
+        proposal = client.post(f"/api/cases/{case_id}/propose").json()
+        client.post(
+            f"/api/cases/{case_id}/decision",
+            json={
+                "action_hash": proposal["action_hash"],
+                "approve": True,
+            },
+        )
+        assert client.post(f"/api/cases/{case_id}/reconcile").status_code == 409
+        with pytest.raises(TimeoutError):
+            execute_approved("ana", case_id, Unavailable())
+        assert client.post(f"/api/cases/{case_id}/cancel").json()["reconciliation_required"]
+        assert client.get("/api/cases").json()["cases"][0]["reconciliation_required"]
+        response = client.post(f"/api/cases/{case_id}/reconcile")
+        assert response.status_code == 200
+        assert response.json()["outcome"] == "not_applied"
+        row = client.get("/api/cases").json()["cases"][0]
+        assert row["status"] == "cancelled"
+        assert row["reconciliation_required"] is False
+    for name in ["viewer", "cedro"]:
+        with signed_in(name) as denied:
+            assert denied.post(f"/api/cases/{case_id}/reconcile").status_code == 403

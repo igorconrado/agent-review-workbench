@@ -112,8 +112,14 @@ def test_cancel_unknown_prevents_new_effect_but_reports_uncertainty():
     with pytest.raises(TimeoutError):
         execute_approved("ana", case_id, Unavailable())
     assert cancel("ana", case_id)["reconciliation_required"] is True
-    with pytest.raises(Conflict):
-        execute_approved("ana", case_id, SyntheticSandbox())
+    result = execute_approved("ana", case_id, SyntheticSandbox(), cancelled_only=True)
+    assert result["outcome"] == "not_applied"
+    assert execute_approved("ana", case_id, SyntheticSandbox(), cancelled_only=True) == result
+    assert cancel("ana", case_id) == {
+        "status": "cancelled",
+        "effects": [],
+        "reconciliation_required": False,
+    }
     with connection() as conn:
         assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 0
 
@@ -122,3 +128,39 @@ def test_cancel_reports_completed_effect():
     case_id = approved()
     result = execute_approved("ana", case_id, SyntheticSandbox())
     assert cancel("ana", case_id)["effects"] == [result]
+
+
+def test_cancelled_unknown_effect_is_reconciled_without_new_execution():
+    case_id = approved()
+
+    def lost_response():
+        raise TimeoutError("Response lost")
+
+    with pytest.raises(TimeoutError):
+        execute_approved("ana", case_id, SyntheticSandbox(), lost_response)
+    cancel("ana", case_id)
+    result = execute_approved("bia", case_id, SyntheticSandbox(), cancelled_only=True)
+    assert cancel("bia", case_id)["effects"] == [result]
+    with connection() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 1
+
+
+def test_cancelled_reconciliation_keeps_uncertainty_when_lookup_fails():
+    class Unavailable(SyntheticSandbox):
+        def lookup(self, key):
+            raise TimeoutError("Provider unavailable")
+
+    case_id = approved()
+    with pytest.raises(TimeoutError):
+        execute_approved("ana", case_id, Unavailable())
+    cancel("ana", case_id)
+    with pytest.raises(TimeoutError):
+        execute_approved("ana", case_id, Unavailable(), cancelled_only=True)
+    assert cancel("ana", case_id)["reconciliation_required"] is True
+
+
+def test_reconciliation_only_route_cannot_start_an_approved_action():
+    with pytest.raises(Conflict):
+        execute_approved("ana", approved(), SyntheticSandbox(), cancelled_only=True)
+    with connection() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 0
