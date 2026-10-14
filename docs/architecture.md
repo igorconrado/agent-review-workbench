@@ -27,6 +27,20 @@ directly. Each repository has its own database and synthetic fixtures. There is
 no cross-project database access and no Commerce dependency.
 
 ```mermaid
+erDiagram
+  PRINCIPALS ||--o{ SESSIONS : authenticates
+  PRINCIPALS ||--o{ CASES : decides
+  CASES ||--o{ AUDIT : records
+  CASES ||--o{ TOOL_CALLS : journals
+  CASES ||--o{ CHECKPOINTS : thread_id
+  TOOL_CALLS ||--o| SANDBOX_EFFECTS : stable_action_hash
+```
+
+Checkpoint and sandbox associations are logical, not cross-schema foreign keys.
+The case row holds versioned evidence, current proposal/hash and decision identity;
+the journal stores unknown/settled execution results independently from checkpoints.
+
+```mermaid
 stateDiagram-v2
   [*] --> open
   open --> review: deterministic proposal
