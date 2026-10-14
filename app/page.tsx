@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Evidence = {
   order_status: string;
@@ -30,7 +30,44 @@ const labels: Record<string, string> = {
   flag_refund: "Sinalizar reembolso",
   close_no_action: "Encerrar sem ação",
   abstain: "Abster-se",
+  expired: "Expirado",
+  confirmed: "Confirmado",
+  unknown: "Desconhecido",
+  paid: "Pago",
+  unpaid: "Não pago",
 };
+const reasons: Record<string, string> = {
+  "Evidence is incomplete or contradictory.":
+    "A evidência está incompleta ou apresenta contradições.",
+  "Paid order is no longer fulfillable.":
+    "O pedido foi pago, mas não pode mais ser atendido.",
+  "No unmatched payment was observed.":
+    "Não foi observado pagamento sem correspondência no pedido.",
+};
+class ApiError extends Error {
+  constructor(
+    readonly detail: string,
+    status: number,
+  ) {
+    const messages: Record<string, string> = {
+      "Invalid credentials": "Confira seu usuário e sua senha.",
+      "Login budget exhausted":
+        "Muitas tentativas de acesso. Aguarde antes de tentar novamente.",
+      "Session expired or revoked":
+        "Sua sessão expirou ou foi revogada. Entre novamente.",
+    };
+    super(
+      messages[detail] ??
+        (status === 403
+          ? "Seu acesso não permite esta ação. Atualize os dados para conferir suas permissões."
+          : status === 409
+            ? "O caso mudou ou esta ação não está disponível. Atualize os dados antes de decidir."
+            : status === 422
+              ? "Dados inválidos. Confira os campos."
+              : "Não foi possível confirmar o resultado. Atualize os dados antes de tentar novamente."),
+    );
+  }
+}
 
 async function api(path: string, method = "GET", body?: unknown) {
   const response = await fetch(`/api${path}`, {
@@ -38,22 +75,25 @@ async function api(path: string, method = "GET", body?: unknown) {
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   if (!response.ok)
-    throw new Error(
-      typeof data.detail === "string"
-        ? data.detail
-        : "Dados inválidos. Confira os campos.",
+    throw new ApiError(
+      typeof data.detail === "string" ? data.detail : "",
+      response.status,
     );
   return data;
 }
 
 export default function Page() {
+  const feedback = useRef<HTMLDivElement>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [selected, select] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (error) feedback.current?.focus();
+  }, [error]);
   const [user, setUser] = useState("ana");
   const [password, setPassword] = useState("");
   const [scenario, setScenario] = useState("expired");
@@ -65,7 +105,11 @@ export default function Page() {
   async function refresh() {
     const data: Workspace = await api("/cases");
     setWorkspace(data);
-    select((current) => current ?? data.cases[0]?.id ?? null);
+    select((current) =>
+      data.cases.some((item) => item.id === current)
+        ? current
+        : (data.cases[0]?.id ?? null),
+    );
   }
   useEffect(() => {
     let mounted = true;
@@ -76,7 +120,18 @@ export default function Page() {
           select(data.cases[0]?.id ?? null);
         }
       })
-      .catch(() => {});
+      .catch((cause) => {
+        if (
+          mounted &&
+          !(
+            cause instanceof ApiError &&
+            cause.detail === "Session expired or revoked"
+          )
+        )
+          setError(
+            "Não foi possível carregar a bancada. Tente entrar novamente.",
+          );
+      });
     return () => {
       mounted = false;
     };
@@ -88,7 +143,19 @@ export default function Page() {
     try {
       await action();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha inesperada");
+      if (
+        cause instanceof ApiError &&
+        cause.detail === "Session expired or revoked"
+      ) {
+        setWorkspace(null);
+        select(null);
+        setPassword("");
+      }
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Falha de conexão. Atualize os dados antes de tentar novamente.",
+      );
     } finally {
       setBusy(false);
     }
@@ -119,11 +186,13 @@ export default function Page() {
       <div role="status" aria-live="polite">
         {busy ? "Processando…" : message}
       </div>
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
+      <div ref={feedback} tabIndex={-1} className="feedback">
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+      </div>
       {!workspace ? (
         <section className="login">
           <h2>Acessar a bancada</h2>
@@ -133,6 +202,7 @@ export default function Page() {
               event.preventDefault();
               void perform(async () => {
                 await api("/session", "POST", { principal_id: user, password });
+                setPassword("");
                 await refresh();
               });
             }}
@@ -168,6 +238,13 @@ export default function Page() {
             <button
               className="secondary"
               disabled={busy}
+              onClick={() => void perform(refresh)}
+            >
+              Atualizar dados
+            </button>
+            <button
+              className="secondary"
+              disabled={busy}
               onClick={() =>
                 void perform(async () => {
                   await api("/session", "DELETE");
@@ -182,7 +259,7 @@ export default function Page() {
           <section className="create">
             <div>
               <h2>Nova exceção</h2>
-              <p>Fixtures independentes. Nenhum pagamento real.</p>
+              <p>Cenários demonstrativos. Nenhum pagamento real.</p>
             </div>
             <label>
               Cenário
@@ -254,11 +331,17 @@ export default function Page() {
                     <dl>
                       <div>
                         <dt>Pedido</dt>
-                        <dd>{active.evidence.order_status}</dd>
+                        <dd>
+                          {labels[active.evidence.order_status] ??
+                            active.evidence.order_status}
+                        </dd>
                       </div>
                       <div>
                         <dt>Pagamento</dt>
-                        <dd>{active.evidence.payment_status}</dd>
+                        <dd>
+                          {labels[active.evidence.payment_status] ??
+                            active.evidence.payment_status}
+                        </dd>
                       </div>
                       <div>
                         <dt>Valor</dt>
@@ -276,7 +359,9 @@ export default function Page() {
                     <section className="proposal">
                       <p className="eyebrow">PROPOSTA DETERMINÍSTICA</p>
                       <h3>{labels[active.action.kind]}</h3>
-                      <p>{active.action.reason}</p>
+                      <p>
+                        {reasons[active.action.reason] ?? active.action.reason}
+                      </p>
                       <details>
                         <summary>Vínculo de aprovação</summary>
                         <code>{active.action_hash}</code>
