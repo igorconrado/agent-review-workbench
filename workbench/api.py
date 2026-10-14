@@ -24,6 +24,7 @@ from workbench.review import (
     replace_evidence,
 )
 from workbench.store import connection
+from workbench.worker import retry_case
 
 app = FastAPI(title="Agent Review Workbench", version="0.1.0")
 logger = logging.getLogger("workbench")
@@ -162,6 +163,12 @@ def edit(request: Request, case_id: str, body: ProposalEdit) -> dict[str, str]:
 @app.post("/api/cases/{case_id}/reconcile")
 def reconcile(request: Request, case_id: str) -> dict[str, Any]:
     return execute_approved(actor(request), case_id, SyntheticSandbox(), cancelled_only=True)
+
+
+@app.post("/api/cases/{case_id}/retry")
+def retry(request: Request, case_id: str) -> dict[str, bool]:
+    retry_case(actor(request), case_id)
+    return {"ok": True}
 
 
 @app.post("/api/cases/{case_id}/cancel")

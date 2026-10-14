@@ -7,11 +7,21 @@ to 127.0.0.1:3200. The web image bakes its API origin at build time. IMAGE_TAG s
 be a Git commit in any reproducible release; the default local tag is development-only.
 
 The optional worker runs with `docker compose exec api python -m workbench.worker`.
-It polls approved/uncertain domain cases, uses the recorded reviewer identity and
-revalidates current authorization. Use one worker for this demonstration. The UI
-also supports explicit execution. No distributed scheduling or lifetime retry
-budget is claimed. Unknown calls remain in PostgreSQL after crashes; resume looks
-up the sandbox result before retrying an effect.
+It claims due approved/uncertain domain cases, uses the recorded reviewer identity
+and revalidates current authorization. Five automatic attempts are reserved
+durably, with 5/10/20/40/80-second delays. A failed older batch cannot monopolize
+the next poll. A crash after claiming may consume an attempt without invoking
+the provider; this is deliberately conservative. After five attempts, inspect the
+cause and use the authorized, audited retry control in the UI. It resets only the
+automatic attempt allowance, never approval or the effect journal. Explicit
+reviewer execution remains possible and is not an automatic retry.
+
+Use one worker for this demonstration; distributed lease fencing and HA are not
+claimed. The worker executes from domain approval/journal rather than requiring a
+LangGraph checkpoint, so domain/MCP-created approvals are recoverable too. Unknown
+calls remain in PostgreSQL after crashes; recovery looks up the sandbox result
+before retrying an effect. Model token/cost quotas remain per invocation and are
+separate from this durable worker retry allowance.
 
 ## Backup, restore and rollback
 
