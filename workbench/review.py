@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 from psycopg.types.json import Jsonb
 
-from workbench.policy import Evidence, action_hash, propose
+from workbench.policy import Action, Evidence, action_hash, propose
 from workbench.store import connection
 
 
@@ -90,6 +90,20 @@ def decide(principal_id: str, case_id: str, digest: str, approve: bool) -> None:
             (status, principal_id, UUID(case_id)),
         )
         audit(conn, case_id, principal_id, status)
+
+
+def edit_proposal(principal_id: str, case_id: str, digest: str, action: Action) -> str:
+    with connection() as conn:
+        case = locked_case(conn, principal_id, case_id)
+        if case["status"] != "review" or case["action_hash"] != digest:
+            raise Conflict("Only the current proposal can be edited before decision")
+        updated = action_hash(case_id, case["context_version"], action)
+        conn.execute(
+            "UPDATE cases SET action=%s,action_hash=%s,decision_by=NULL WHERE id=%s",
+            (Jsonb(action.model_dump()), updated, UUID(case_id)),
+        )
+        audit(conn, case_id, principal_id, "proposal_edited")
+        return updated
 
 
 def replace_evidence(principal_id: str, case_id: str, evidence: Evidence) -> None:

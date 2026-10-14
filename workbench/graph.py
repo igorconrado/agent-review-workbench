@@ -4,6 +4,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
+from workbench.budgets import RunBudget
 from workbench.execution import SyntheticSandbox, execute_approved
 from workbench.review import Conflict, locked_case, propose_case
 from workbench.store import connection, database_url
@@ -16,6 +17,7 @@ class ReviewState(TypedDict, total=False):
 
 
 def run_graph(principal_id: str, case_id: str, resume: bool = False) -> dict[str, Any]:
+    budget = RunBudget()
     # Authorize before reading any checkpoint; identity is a trusted server argument,
     # never an editable graph state field or model-supplied tool parameter.
     with connection() as conn:
@@ -24,9 +26,11 @@ def run_graph(principal_id: str, case_id: str, resume: bool = False) -> dict[str
             raise Conflict("No approved workflow is available to resume")
 
     def proposal(state: ReviewState) -> dict[str, Any]:
+        budget.consume(calls=1)
         return {"proposal": propose_case(principal_id, state["case_id"])}
 
     def review(state: ReviewState) -> dict[str, Any]:
+        budget.consume()
         interrupt({"requires_human_review": True, **state["proposal"]})
         with connection() as conn:
             case = locked_case(conn, principal_id, state["case_id"])
@@ -35,6 +39,7 @@ def run_graph(principal_id: str, case_id: str, resume: bool = False) -> dict[str
         return {}
 
     def execution(state: ReviewState) -> dict[str, Any]:
+        budget.consume(calls=1)
         return {"result": execute_approved(principal_id, state["case_id"], SyntheticSandbox())}
 
     with PostgresSaver.from_conn_string(database_url()) as saver:

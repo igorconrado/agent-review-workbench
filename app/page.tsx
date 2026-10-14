@@ -55,6 +55,8 @@ export default function Page() {
   const [user, setUser] = useState("ana");
   const [password, setPassword] = useState("");
   const [scenario, setScenario] = useState("expired");
+  const [editKind, setEditKind] = useState("close_no_action");
+  const [editReason, setEditReason] = useState("");
   const active = workspace?.cases.find((item) => item.id === selected);
   const reviewer = workspace?.role === "reviewer";
 
@@ -294,6 +296,52 @@ export default function Page() {
                     )}
                     {active.status === "review" && (
                       <>
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void perform(() =>
+                              transition("edit", {
+                                action_hash: active.action_hash,
+                                action: { kind: editKind, reason: editReason },
+                              }),
+                            );
+                          }}
+                        >
+                          <label>
+                            Ação revisada
+                            <select
+                              value={editKind}
+                              onChange={(event) =>
+                                setEditKind(event.target.value)
+                              }
+                            >
+                              <option value="close_no_action">
+                                Encerrar sem ação
+                              </option>
+                              <option value="flag_refund">
+                                Sinalizar reembolso
+                              </option>
+                              <option value="abstain">Abster-se</option>
+                            </select>
+                          </label>
+                          <label>
+                            Justificativa da edição
+                            <input
+                              value={editReason}
+                              onChange={(event) =>
+                                setEditReason(event.target.value)
+                              }
+                              required
+                              maxLength={500}
+                            />
+                          </label>
+                          <button
+                            className="secondary"
+                            disabled={busy || !reviewer}
+                          >
+                            Salvar edição para revisão
+                          </button>
+                        </form>
                         <button
                           disabled={
                             busy ||
