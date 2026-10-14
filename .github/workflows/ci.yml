@@ -45,4 +45,4 @@ jobs:
           python -m uvicorn workbench.api:app --host 127.0.0.1 --port 8100 > /tmp/workbench-api.log 2>&1 &
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8100/api/health && break; sleep 1; done
           npx playwright test
-      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 dir /repo --redact
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --redact
