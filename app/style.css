@@ -196,6 +196,12 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+.actions form {
+  flex-basis: 100%;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: end;
 }
 .error {
   color: #8d2525;
@@ -214,6 +220,9 @@ footer {
   display: none;
 }
 @media (max-width: 760px) {
+  .actions form {
+    grid-template-columns: 1fr;
+  }
   main {
     padding: 20px;
   }
