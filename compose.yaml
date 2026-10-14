@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:18.4
+    environment:
+      POSTGRES_USER: workbench
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a local database password}
+      POSTGRES_DB: workbench
+    volumes: ["database:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workbench -d workbench"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    image: agent-review-workbench-api:${IMAGE_TAG:-local}
+    build:
+      context: .
+      target: api
+    environment:
+      DATABASE_URL: postgresql://workbench:${POSTGRES_PASSWORD}@postgres:5432/workbench
+      APP_ORIGIN: http://127.0.0.1:3200
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "python -m workbench.store && python -m uvicorn workbench.api:app --host 0.0.0.0 --port 8100",
+      ]
+  web:
+    image: agent-review-workbench-web:${IMAGE_TAG:-local}
+    build:
+      context: .
+      target: web
+    environment:
+      API_ORIGIN: http://api:8100
+    ports: ["127.0.0.1:3200:3200"]
+    depends_on: [api]
+volumes:
+  database:
