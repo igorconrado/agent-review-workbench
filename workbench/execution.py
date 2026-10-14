@@ -7,7 +7,7 @@ from uuid import UUID
 from psycopg.types.json import Jsonb
 
 from workbench.policy import Action, action_hash
-from workbench.review import Conflict, audit, locked_case
+from workbench.review import Conflict, audit, authorize, locked_case
 from workbench.store import connection
 
 
@@ -82,6 +82,9 @@ def execute_approved(
         if result is None:
             if case["status"] != "uncertain" or case["action_hash"] != key:
                 raise Conflict("Cancelled or superseded action cannot start a new effect")
+            # Existing effects remain reconcilable, but a new effect requires a
+            # still-authorized approver even when a different reviewer executes.
+            authorize(conn, case["decision_by"], case["organization"])
             result = gateway.execute(key, action)
         if after_effect:
             after_effect()

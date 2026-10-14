@@ -54,6 +54,34 @@ def test_revocation_before_execution_prevents_effect():
         assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 0
 
 
+@pytest.mark.parametrize("revocation", ["active=false", "role='viewer'", "organization='cedro'"])
+def test_another_reviewer_cannot_execute_a_revoked_approval(revocation):
+    case_id = approved()
+    with connection() as conn:
+        conn.execute(f"UPDATE principals SET {revocation} WHERE id='ana'")
+    with pytest.raises(Forbidden):
+        execute_approved("bia", case_id, SyntheticSandbox())
+    with connection() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 0
+
+
+def test_authorized_reviewer_can_reconcile_existing_effect_after_approver_revocation():
+    case_id = approved()
+
+    def lost_response():
+        raise TimeoutError("Effect committed before response loss")
+
+    with pytest.raises(TimeoutError):
+        execute_approved("ana", case_id, SyntheticSandbox(), lost_response)
+    with connection() as conn:
+        conn.execute("UPDATE principals SET active=false WHERE id='ana'")
+    result = execute_approved("bia", case_id, SyntheticSandbox())
+    assert result["sandbox_only"] is True
+    with connection() as conn:
+        assert conn.execute("SELECT count(*) AS n FROM sandbox.effects").fetchone()["n"] == 1
+        assert conn.execute("SELECT state FROM tool_calls").fetchone()["state"] == "settled"
+
+
 def test_cancelled_approval_cannot_execute():
     case_id = approved()
     cancel("ana", case_id)

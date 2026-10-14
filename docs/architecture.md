@@ -7,6 +7,13 @@ fields. The action digest includes schema version, case ID, context version and
 the exact action payload. Reviewer edits change that digest. Context replacement
 invalidates the proposal and decision. Row locks serialize competing decisions.
 
+Before a new sandbox effect, execution revalidates both the current executor and
+the original approver's current role, active flag and organization. A different
+reviewer cannot reuse approval after its author loses authority. The approver row
+is share-locked through the effect decision. An authorized reviewer may still
+reconcile an existing provider effect after the approver is revoked: revocation
+does not erase historical reality or authorize a new attempt.
+
 ```mermaid
 flowchart LR
   UI[Next.js reviewer UI] --> API[FastAPI sessions and authorization]
