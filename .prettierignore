@@ -1,0 +1,10 @@
+.venv
+.tmp
+.next
+node_modules
+test-results
+playwright-report
+requirements-lock.txt
+*.py
+*.sql
+*.toml

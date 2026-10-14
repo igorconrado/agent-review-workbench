@@ -10,3 +10,7 @@ node_modules/
 AGENTS.md
 .Codex/
 .claudeignore
+
+*.tsbuildinfo
+test-results/
+playwright-report/

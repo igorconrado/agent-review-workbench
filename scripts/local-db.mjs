@@ -30,4 +30,3 @@ for (const signal of ["SIGINT", "SIGTERM"])
     process.exit(0);
   });
 await new Promise(() => {});
-
